@@ -96,8 +96,14 @@ function compute(image) {
 
   const [left, right] = cheeks.map(samples => samples[Math.floor(samples.length / 2)]);
   const warmth = (left + right) / 2;
-  // The pale reference defines the low end. The orange portrait anchors Full Trump at 65.
-  const score = Math.max(0, Math.min(100, 65 * (warmth - 0.025) / (0.171 - 0.025)));
+  // Use cheek color references for Trump Light (45) and Full Trump (65).
+  const baseline = 0.025;
+  const trumpLight = 0.1004;
+  const fullTrump = 0.171;
+  const calibrated = warmth <= trumpLight
+    ? 45 * (warmth - baseline) / (trumpLight - baseline)
+    : 45 + 20 * (warmth - trumpLight) / (fullTrump - trumpLight);
+  const score = Math.max(0, Math.min(100, calibrated));
   const count = cheeks[0].length + cheeks[1].length;
   const quality = count >= 100 && Math.abs(left - right) < 0.10 ? 'MODERATE' : 'LOW';
   return { score, quality, count };
