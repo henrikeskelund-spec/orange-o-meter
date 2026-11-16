@@ -11,7 +11,7 @@
 </style></head><body><main><div class="top"><div><div class="eyebrow">FACIAL CHROMATICS LABORATORY</div><div class="logo">ORANGE<span>-O-</span>METER</div></div><div class="tag">SCIENCE*<br>EDITION 1.0</div></div><p>Advanced Epidermal Orange Spectrometry™ · En dybt seriøs analyse af et meget useriøst problem.</p><section class="panel"><div class="eyebrow">01 / ACQUISITION MODE</div><div class="switch" style="margin-top:12px"><button class="active" id="liveTab">● LIVE SCAN</button><button id="selfieTab">▣ SELFIE LAB</button></div><div class="camera"><video id="video" autoplay playsinline muted hidden></video><img id="photo" alt="Valgt selfie" hidden><div id="placeholder" class="placeholder">◉<br><br>KAMERA KLAR TIL KALIBRERING</div><div class="reticle" id="reticle"></div></div><div class="status" id="status" role="status">Klar. Kameraet starter først, når du giver tilladelse.</div><div class="controls" id="liveControls"><button class="primary" id="start">Start liveanalyse</button><button class="secondary" id="stop" disabled>Stop kamera</button></div><div class="controls" id="selfieControls" hidden><label class="upload">Vælg / tag selfie<input id="file" type="file" accept="image/*" capture="user"></label><button class="primary" id="analyze" disabled>Analyser billede</button></div>
 <details id="faceSetup" class="face-setup" hidden>
   <summary>Ansigtsgenkendelse på denne enhed</summary>
-  <p>Vælg 3–5 fotos med ét ansigt på hvert billede. Brug billeder af en person, der har sagt ja. Browseren gemmer ansigtsprofilen lokalt.</p>
+  <p>Vælg 3–10 fotos af en person, der har sagt ja. Brug ét ansigt pr. foto. Profilen gemmes i denne browser og bruges i Live Scan og Selfie Lab.</p>
   <label for="faceFiles">Referencebilleder</label>
   <input id="faceFiles" type="file" accept="image/*" multiple>
   <p id="faceState" role="status"></p>
@@ -40,6 +40,7 @@ let faceEngine;
 let faceBusy = false;
 let faceRevision = 0;
 let previousGreeting = -1;
+let lastFaceSample = -Infinity;
 
 function validDescriptor(values) {
   return Array.isArray(values) && values.length === 128 && values.every(Number.isFinite);
@@ -49,7 +50,7 @@ function readReferences() {
   try {
     const references = JSON.parse(localStorage.getItem(faceKey));
     if (Array.isArray(references) && references.length >= 3 &&
-        references.length <= 5 && references.every(validDescriptor)) return references;
+        references.length <= 10 && references.every(validDescriptor)) return references;
   } catch {
     // Storage may be unavailable in private browsing or restricted frames.
   }
@@ -99,12 +100,15 @@ async function loadFaceEngine() {
 }
 
 async function describeFace(image) {
-  const api = await loadFaceEngine();
+  const width = image.videoWidth || image.naturalWidth;
+  const height = image.videoHeight || image.naturalHeight;
+  if (!width || !height) return null;
   const canvas = document.createElement('canvas');
-  const scale = Math.min(1, 720 / Math.max(image.naturalWidth, image.naturalHeight));
-  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
-  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const scale = Math.min(1, 720 / Math.max(width, height));
+  canvas.width = Math.max(1, Math.round(width * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
   canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+  const api = await loadFaceEngine();
   const faces = await api.detectAllFaces(canvas, new api.TinyFaceDetectorOptions({ inputSize: 416 }))
     .withFaceLandmarks(true).withFaceDescriptors();
   return faces.length === 1 ? Array.from(faces[0].descriptor) : null;
@@ -118,6 +122,13 @@ function updateFaceSetup(message) {
     : 'Ansigtsgenkendelse er slået fra.');
 }
 
+function updateFaceSetupVisibility() {
+  const visible = window.location?.hash === '#opsaetning';
+  $('faceSetup').hidden = !visible;
+  $('faceSetup').open = visible;
+  if (visible && !faceBusy) updateFaceSetup();
+}
+
 function clearFaceGreeting() {
   faceRevision++;
   $('faceGreeting').hidden = true;
@@ -127,8 +138,8 @@ async function enrollFace(event) {
   const files = Array.from(event.target.files);
   event.target.value = '';
   if (faceBusy || !files.length) return;
-  if (files.length < 3 || files.length > 5) {
-    updateFaceSetup('Vælg 3–5 billeder af én person.');
+  if (files.length < 3 || files.length > 10) {
+    updateFaceSetup('Vælg 3–10 billeder af én person.');
     return;
   }
   clearFaceGreeting();
@@ -138,32 +149,32 @@ async function enrollFace(event) {
   updateFaceSetup('Læser referencebilleder lokalt …');
   try {
     const references = [];
-    for (const [index, file] of files.entries()) {
+    await loadFaceEngine();
+    for (const file of files) {
       const image = new Image();
       const url = URL.createObjectURL(file);
       try {
         image.src = url;
-        await image.decode();
+        if (!await image.decode().then(() => true, () => false)) continue;
         const descriptor = await describeFace(image);
         if (validDescriptor(descriptor)) references.push(descriptor);
-        else throw new Error('Vælg et billede med præcis ét tydeligt ansigt.');
-      } catch (error) {
-        if (error.message.startsWith('Vælg et billede')) {
-          updateFaceSetup(`Billede ${index + 1}. ${error.message}`);
-          return;
-        }
-        throw error;
       } finally {
         URL.revokeObjectURL(url);
       }
     }
-    if (!references.every((reference, index) =>
-      matchesReference(reference, references.filter((_, other) => other !== index)))) {
-      updateFaceSetup('Billederne matcher ikke tydeligt. Prøv tre skarpe billeder taget lige forfra eller let fra siden.');
+    let consistent = references;
+    while (consistent.length >= 3) {
+      const supported = consistent.filter((reference, index) =>
+        matchesReference(reference, consistent.filter((_, other) => other !== index)));
+      if (supported.length === consistent.length) break;
+      consistent = supported;
+    }
+    if (consistent.length < 3) {
+      updateFaceSetup('Der skal være mindst tre skarpe billeder, der matcher. Prøv billeder taget forfra eller let fra siden.');
       return;
     }
-    localStorage.setItem(faceKey, JSON.stringify(references));
-    updateFaceSetup();
+    localStorage.setItem(faceKey, JSON.stringify(consistent));
+    updateFaceSetup(`Ansigtsgenkendelse er aktiv i denne browser. ${consistent.length} af ${files.length} billeder blev brugt.`);
   } catch {
     updateFaceSetup('Opsætningen mislykkedes. Tjek forbindelsen, og prøv igen med tydelige billeder.');
   } finally {
@@ -173,17 +184,24 @@ async function enrollFace(event) {
   }
 }
 
-async function checkFaceGreeting(image) {
+async function checkFaceGreeting(image, source = 'selfie') {
   if (faceBusy) return;
-  clearFaceGreeting();
+  if (source === 'selfie') clearFaceGreeting();
   const references = readReferences();
-  if (!references.length) return;
+  if (!references.length) {
+    $('faceGreeting').hidden = true;
+    return;
+  }
   const revision = faceRevision;
   faceBusy = true;
   try {
     const descriptor = await describeFace(image);
-    if (revision !== faceRevision || mode !== 'selfie' ||
-        !matchesReference(descriptor, readReferences())) return;
+    if (revision !== faceRevision || mode !== source) return;
+    if (!matchesReference(descriptor, readReferences())) {
+      $('faceGreeting').hidden = true;
+      return;
+    }
+    if (!$('faceGreeting').hidden) return;
     const choices = faceGreetings.map((_, index) => index).filter(index => index !== previousGreeting);
     previousGreeting = choices[Math.floor(Math.random() * choices.length)];
     const [title, message] = faceGreetings[previousGreeting];
@@ -191,13 +209,19 @@ async function checkFaceGreeting(image) {
     $('faceGreetingMessage').textContent = message;
     $('faceGreeting').hidden = false;
   } catch {
-    if (revision === faceRevision) updateFaceSetup('Ansigtsgenkendelse kunne ikke indlæses. Prøv igen.');
+    if (revision === faceRevision) {
+      $('faceGreeting').hidden = true;
+      if (source === 'live') lastFaceSample = performance.now() + 12000;
+      updateFaceSetup('Ansigtsgenkendelse kunne ikke indlæses. Prøv igen.');
+    }
   } finally {
     faceBusy = false;
   }
 }
 
 $('faceSetup').ontoggle = event => { if (event.target.open) updateFaceSetup(); };
+window.addEventListener('hashchange', updateFaceSetupVisibility);
+updateFaceSetupVisibility();
 $('faceFiles').onchange = enrollFace;
 $('faceForget').onclick = () => {
   try {
@@ -328,8 +352,23 @@ function measure(image) {
   status('Analyse gennemført lokalt · ' + result.count + ' farveprøver · Kun vejledende');
 }
 async function start(){if(!navigator.mediaDevices?.getUserMedia){status('Livekamera kræver HTTPS og en understøttet browser. Selfieanalyse virker stadig.');return}try{stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:'user',width:{ideal:720},height:{ideal:960}}});$('video').srcObject=stream;await $('video').play();$('video').hidden=false;$('placeholder').hidden=true;$('start').disabled=true;$('stop').disabled=false;status('LIVE · Ansigtet skal være midt i den stiplede oval.');tick(performance.now())}catch(e){status('Kameraet kunne ikke startes: '+(e.name==='NotAllowedError'?'Giv kameraadgang i browseren.':e.message))}}
-function tick(t){if(!stream||mode!=='live')return;if(t-lastSample>450){lastSample=t;if($('video').readyState>=2)measure($('video'))}frameId=requestAnimationFrame(tick)}function stop(){liveScore=null;cancelAnimationFrame(frameId);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('video').srcObject=null;$('video').hidden=true;$('start').disabled=false;$('stop').disabled=true;if(mode==='live'){$('placeholder').hidden=false;status('Kameraet er stoppet.')}}
-function switchMode(next){if(mode===next)return;clearFaceGreeting();stop();mode=next;$('faceSetup').hidden=next!=='selfie';$('liveTab').classList.toggle('active',next==='live');$('selfieTab').classList.toggle('active',next==='selfie');$('liveControls').hidden=next!=='live';$('selfieControls').hidden=next!=='selfie';$('photo').hidden=true;$('placeholder').hidden=false;status(next==='live'?'Klar til liveanalyse.':'Vælg et billede eller tag en selfie.');}
+function tick(time) {
+  if (!stream || mode !== 'live') return;
+  const video = $('video');
+  if (video.readyState >= 2) {
+    if (time - lastSample > 450) {
+      lastSample = time;
+      measure(video);
+    }
+    if (!faceBusy && time - lastFaceSample >= 2400) {
+      lastFaceSample = time;
+      checkFaceGreeting(video, 'live');
+    }
+  }
+  frameId = requestAnimationFrame(tick);
+}
+function stop(){clearFaceGreeting();lastFaceSample=-Infinity;liveScore=null;cancelAnimationFrame(frameId);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('video').srcObject=null;$('video').hidden=true;$('start').disabled=false;$('stop').disabled=true;if(mode==='live'){$('placeholder').hidden=false;status('Kameraet er stoppet.')}}
+function switchMode(next){if(mode===next)return;stop();mode=next;$('liveTab').classList.toggle('active',next==='live');$('selfieTab').classList.toggle('active',next==='selfie');$('liveControls').hidden=next!=='live';$('selfieControls').hidden=next!=='selfie';$('photo').hidden=true;$('placeholder').hidden=false;status(next==='live'?'Klar til liveanalyse.':'Vælg et billede eller tag en selfie.');}
 $('liveTab').onclick=()=>switchMode('live');$('selfieTab').onclick=()=>switchMode('selfie');$('start').onclick=start;$('stop').onclick=stop;
 $('file').onchange=e=>{let file=e.target.files?.[0];if(!file)return;clearFaceGreeting();photoReady=false;$('analyze').disabled=true;let url=URL.createObjectURL(file);const img=$('photo');img.onload=()=>{URL.revokeObjectURL(url);photoReady=true;$('analyze').disabled=false;$('placeholder').hidden=true;img.hidden=false;status('Selfie indlæst. Tryk på Analyser billede.');};img.onerror=()=>{URL.revokeObjectURL(url);status('Billedet kunne ikke åbnes.')};img.src=url};$('analyze').onclick=()=>{if(photoReady){measure($('photo'));checkFaceGreeting($('photo'))}};
 function resultCanvas(){let c=document.createElement('canvas');c.width=900;c.height=1100;let g=c.getContext('2d');g.fillStyle='#0b111b';g.fillRect(0,0,900,1100);g.fillStyle='#f28a2d';g.font='bold 60px system-ui';g.fillText('ORANGE-O-METER',60,100);g.fillStyle='#a8b7c9';g.font='25px system-ui';g.fillText('SCIENTIFIC EDITION · FACIAL CHROMATICS LAB',60,145);let source=mode==='live'&&stream?$('video'):mode==='selfie'&&photoReady?$('photo'):null;if(source){let w=source.videoWidth||source.naturalWidth,h=source.videoHeight||source.naturalHeight;if(w&&h){let scale=Math.min(780/w,570/h),dw=w*scale,dh=h*scale;g.drawImage(source,(900-dw)/2,185,dw,dh)}}g.fillStyle='#f28a2d';g.font='bold 120px system-ui';g.fillText(lastScore.toFixed(1)+'%',60,875);let i=levelIndex(lastScore);g.fillStyle='#fff';g.font='bold 45px system-ui';g.fillText(levels[i][0],60,950,780);g.fillStyle='#a8b7c9';g.font='23px system-ui';g.fillText('For sjov · Ikke en medicinsk måling',60,1035);return c}
