@@ -1,9 +1,213 @@
 <!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b111b"><title>Orange-O-Meter · Scientific Edition</title><style>
 :root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#e9f0f6;background:#0b111b}*{box-sizing:border-box}body{margin:0}main{max-width:650px;margin:auto;padding:20px 16px 48px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.eyebrow{font-size:10px;letter-spacing:2px;color:#8c9cae;font-weight:750}.logo{font-size:25px;font-weight:850;letter-spacing:-1px}.logo span{color:#ff8a25}.tag{border:1px solid #314051;border-radius:6px;padding:7px;font-size:10px;color:#a6b7c8}p{color:#93a5b8;font-size:13px;line-height:1.5}.panel{background:#111c2a;border:1px solid #29384a;border-radius:15px;padding:16px;margin-top:16px}.switch{display:grid;grid-template-columns:1fr 1fr;gap:8px}.switch button{background:#1b2939;color:#dce5ee;border:1px solid #35485a}.switch button.active{background:#e67a20;color:#141414;border-color:#ffb16a}button,.upload{border:0;border-radius:9px;padding:13px 12px;font-weight:750;font-size:13px;cursor:pointer;text-align:center}button:disabled{opacity:.4;cursor:not-allowed}.primary{background:#f28a2d;color:#15100b}.secondary{background:#243448;color:#edf2f7}.camera{position:relative;overflow:hidden;border-radius:11px;background:#060a10;aspect-ratio:4/3;margin-top:13px;display:flex;align-items:center;justify-content:center}.camera video,.camera img{width:100%;height:100%;object-fit:contain;position:absolute}.placeholder{color:#6c8295;text-align:center;font-size:13px}.reticle{position:absolute;width:52%;height:76%;border:2px dashed #f28a2d99;border-radius:47%;pointer-events:none;box-shadow:0 0 30px #ff9b2320}.camera:has(.placeholder:not([hidden])) .reticle{display:none}[hidden]{display:none!important}.status{font-size:11px;color:#a6b8ca;margin-top:10px;min-height:32px}.controls{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.upload{background:#243448;color:#edf2f7;display:block}.upload input{display:none}.result{text-align:center}.metric{font-size:clamp(56px,15vw,86px);font-weight:850;letter-spacing:-5px;font-variant-numeric:tabular-nums;line-height:1.2}.metric small{font-size:27px;letter-spacing:0;color:#ff9b39}.bar{height:12px;background:linear-gradient(90deg,#d8bca1,#f5c282,#f5a64c,#f77b20,#f34a09);border-radius:30px;position:relative;margin:20px 4px 12px}.needle{position:absolute;top:-6px;height:24px;width:3px;background:white;box-shadow:0 0 6px #000;left:0;transition:left .3s}.ticks{display:flex;justify-content:space-between;font-size:10px;color:#8698ab}.level{font-size:22px;font-weight:850;margin-top:19px}.comment{font-size:14px;color:#b4c1cf;min-height:42px}.report{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.cell{background:#0b1420;border:1px solid #253547;padding:12px;border-radius:9px;text-align:left}.cell b{display:block;font-size:16px;margin-top:7px}.disclaimer{font-size:11px;color:#7f91a3;margin-top:14px}.footer{font-size:10px;color:#697e92;text-align:center;margin-top:25px}.live{color:#7ee2b0}.warn{color:#ffc178}
-</style></head><body><main><div class="top"><div><div class="eyebrow">FACIAL CHROMATICS LABORATORY</div><div class="logo">ORANGE<span>-O-</span>METER</div></div><div class="tag">SCIENCE*<br>EDITION 1.0</div></div><p>Advanced Epidermal Orange Spectrometry™ · En dybt seriøs analyse af et meget useriøst problem.</p><section class="panel"><div class="eyebrow">01 / ACQUISITION MODE</div><div class="switch" style="margin-top:12px"><button class="active" id="liveTab">● LIVE SCAN</button><button id="selfieTab">▣ SELFIE LAB</button></div><div class="camera"><video id="video" autoplay playsinline muted hidden></video><img id="photo" alt="Valgt selfie" hidden><div id="placeholder" class="placeholder">◉<br><br>KAMERA KLAR TIL KALIBRERING</div><div class="reticle" id="reticle"></div></div><div class="status" id="status" role="status">Klar. Kameraet starter først, når du giver tilladelse.</div><div class="controls" id="liveControls"><button class="primary" id="start">Start liveanalyse</button><button class="secondary" id="stop" disabled>Stop kamera</button></div><div class="controls" id="selfieControls" hidden><label class="upload">Vælg / tag selfie<input id="file" type="file" accept="image/*" capture="user"></label><button class="primary" id="analyze" disabled>Analyser billede</button></div></section><section class="panel result"><div class="eyebrow">02 / CHROMATIC ANALYSIS REPORT</div><div class="metric" id="score">--<small>%</small></div><div class="eyebrow">ORANGE SATURATION INDEX · OSI</div><div class="bar"><div class="needle" id="needle"></div></div><div class="ticks"><span>NEUTRAL</span><span>MODERATE</span><span>EXTREME</span></div><div class="level" id="level">AFVENTER PRØVE</div><div class="comment" id="comment">Indsaml en ansigtsprøve for at aktivere laboratorierapporten.</div><div class="report"><div class="cell"><div class="eyebrow">CHROMATIC STATUS</div><b id="classification">NOT ANALYZED</b></div><div class="cell"><div class="eyebrow">CONFIDENCE*</div><b id="confidence">--</b></div></div><div class="controls"><button class="secondary" id="save" disabled>Gem resultatkort</button><button class="secondary" id="share" disabled>Del resultat</button></div><div class="disclaimer">* Underholdning, ikke medicinsk eller videnskabelig diagnostik. Resultatet er en billedbaseret farveindikator, påvirket af lys, kamera og hudtoner. Ingen billeder uploades.</div></section><div class="footer">ORANGE-O-METER · PRIVACY FIRST · LOCAL IMAGE PROCESSING</div><canvas id="work" hidden></canvas></main><script>
+
+.face-setup{margin-top:14px;color:#b4c1cf;font-size:13px}
+.face-setup summary{cursor:pointer;padding:8px 0}
+.face-setup input{display:block;max-width:100%;margin:10px 0;color:#edf2f7;font:inherit}
+.face-setup input::file-selector-button{border:0;border-radius:8px;padding:9px;background:#243448;color:#edf2f7}
+.face-setup p{margin:8px 0}
+.face-greeting{margin:16px 0 0;padding:12px;border:1px solid #f28a2d;border-radius:9px;background:#241c16}
+.face-greeting p{margin:5px 0 0;color:#f2dac7}
+</style></head><body><main><div class="top"><div><div class="eyebrow">FACIAL CHROMATICS LABORATORY</div><div class="logo">ORANGE<span>-O-</span>METER</div></div><div class="tag">SCIENCE*<br>EDITION 1.0</div></div><p>Advanced Epidermal Orange Spectrometry™ · En dybt seriøs analyse af et meget useriøst problem.</p><section class="panel"><div class="eyebrow">01 / ACQUISITION MODE</div><div class="switch" style="margin-top:12px"><button class="active" id="liveTab">● LIVE SCAN</button><button id="selfieTab">▣ SELFIE LAB</button></div><div class="camera"><video id="video" autoplay playsinline muted hidden></video><img id="photo" alt="Valgt selfie" hidden><div id="placeholder" class="placeholder">◉<br><br>KAMERA KLAR TIL KALIBRERING</div><div class="reticle" id="reticle"></div></div><div class="status" id="status" role="status">Klar. Kameraet starter først, når du giver tilladelse.</div><div class="controls" id="liveControls"><button class="primary" id="start">Start liveanalyse</button><button class="secondary" id="stop" disabled>Stop kamera</button></div><div class="controls" id="selfieControls" hidden><label class="upload">Vælg / tag selfie<input id="file" type="file" accept="image/*" capture="user"></label><button class="primary" id="analyze" disabled>Analyser billede</button></div>
+<details id="faceSetup" class="face-setup" hidden>
+  <summary>Ansigtsgenkendelse på denne enhed</summary>
+  <p>Vælg 3–5 fotos med ét ansigt på hvert billede. Brug billeder af en person, der har sagt ja. Browseren gemmer ansigtsprofilen lokalt.</p>
+  <label for="faceFiles">Referencebilleder</label>
+  <input id="faceFiles" type="file" accept="image/*" multiple>
+  <p id="faceState" role="status"></p>
+  <button type="button" class="secondary" id="faceForget" hidden>Slet ansigtsprofil</button>
+</details>
+</section><section class="panel result"><div class="eyebrow">02 / CHROMATIC ANALYSIS REPORT</div><div class="metric" id="score">--<small>%</small></div><div class="eyebrow">ORANGE SATURATION INDEX · OSI</div><div class="bar"><div class="needle" id="needle"></div></div><div class="ticks"><span>NEUTRAL</span><span>MODERATE</span><span>EXTREME</span></div><div class="level" id="level">AFVENTER PRØVE</div><div class="comment" id="comment">Indsaml en ansigtsprøve for at aktivere laboratorierapporten.</div><div class="report"><div class="cell"><div class="eyebrow">CHROMATIC STATUS</div><b id="classification">NOT ANALYZED</b></div><div class="cell"><div class="eyebrow">CONFIDENCE*</div><b id="confidence">--</b></div></div><div class="controls"><button class="secondary" id="save" disabled>Gem resultatkort</button><button class="secondary" id="share" disabled>Del resultat</button></div>
+<div id="faceGreeting" class="face-greeting" role="status" hidden>
+  <strong id="faceGreetingTitle"></strong>
+  <p id="faceGreetingMessage"></p>
+</div>
+<div class="disclaimer">* Underholdning, ikke medicinsk eller videnskabelig diagnostik. Resultatet er en billedbaseret farveindikator, påvirket af lys, kamera og hudtoner. Ingen billeder uploades.</div></section><div class="footer">ORANGE-O-METER · PRIVACY FIRST · LOCAL IMAGE PROCESSING</div><canvas id="work" hidden></canvas></main><script>
 'use strict';
 const $=id=>document.getElementById(id);let mode='live',stream=null,frameId=0,lastSample=0,lastScore=null,photoReady=false;
 let liveScore = null;
+
+const faceGreetings = [
+  ['🎭 Hvem er du, Pjerrot?', 'Du er så bleg, at bronzermåleren gik i minus.'],
+  ['🧪 Uden for skalaen.', 'Laboratoriet har målt dit bronzerniveau til minus 12. Vi vidste ikke, at man kunne skylde bronzer.'],
+  ['📸 Kalibrering gennemført.', 'Kameraet troede, du var det hvide kort, vi bruger til at indstille farverne.'],
+  ['👑 Porcelænsprinsessen har mødt sin overmand.', 'Ved siden af dig ligner hun én, der lige er kommet hjem fra Mallorca.'],
+  ['🧛 Drakula ringede.', 'Han vil gerne vide, hvordan du bliver så bleg. Han har selv undgået solen i 400 år.'],
+];
+const faceKey = 'orange-o-meter:face:v1';
+const facePackage = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15';
+let faceEngine;
+let faceBusy = false;
+let faceRevision = 0;
+let previousGreeting = -1;
+
+function validDescriptor(values) {
+  return Array.isArray(values) && values.length === 128 && values.every(Number.isFinite);
+}
+
+function readReferences() {
+  try {
+    const references = JSON.parse(localStorage.getItem(faceKey));
+    if (Array.isArray(references) && references.length >= 3 &&
+        references.length <= 5 && references.every(validDescriptor)) return references;
+  } catch {
+    // Storage may be unavailable in private browsing or restricted frames.
+  }
+  return [];
+}
+
+function matchesReference(descriptor, references) {
+  if (!validDescriptor(descriptor)) return false;
+  const closeMatches = references.filter(reference => {
+    const squaredDistance = reference.reduce(
+      (sum, value, index) => sum + (value - descriptor[index]) ** 2, 0,
+    );
+    return squaredDistance <= 0.48 ** 2;
+  });
+  return closeMatches.length >= 2;
+}
+
+async function loadFaceEngine() {
+  faceEngine ??= (async () => {
+    if (!window.faceapi) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = facePackage + '/dist/face-api.js';
+        script.crossOrigin = 'anonymous';
+        const timeout = setTimeout(() => {
+          script.remove();
+          reject(new Error('Timeout'));
+        }, 20000);
+        script.onload = () => { clearTimeout(timeout); resolve(); };
+        script.onerror = () => { clearTimeout(timeout); script.remove(); reject(new Error('Script')); };
+        document.head.append(script);
+      });
+    }
+    const api = window.faceapi;
+    const models = facePackage + '/model/';
+    await Promise.all([
+      api.nets.tinyFaceDetector.loadFromUri(models),
+      api.nets.faceLandmark68TinyNet.loadFromUri(models),
+      api.nets.faceRecognitionNet.loadFromUri(models),
+    ]);
+    return api;
+  })().catch(error => {
+    faceEngine = null;
+    throw error;
+  });
+  return faceEngine;
+}
+
+async function describeFace(image) {
+  const api = await loadFaceEngine();
+  const canvas = document.createElement('canvas');
+  const scale = Math.min(1, 720 / Math.max(image.naturalWidth, image.naturalHeight));
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+  canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+  const faces = await api.detectAllFaces(canvas, new api.TinyFaceDetectorOptions({ inputSize: 416 }))
+    .withFaceLandmarks(true).withFaceDescriptors();
+  return faces.length === 1 ? Array.from(faces[0].descriptor) : null;
+}
+
+function updateFaceSetup(message) {
+  const enabled = readReferences().length > 0;
+  $('faceForget').hidden = !enabled;
+  $('faceState').textContent = message || (enabled
+    ? 'Ansigtsgenkendelse er aktiv i denne browser.'
+    : 'Ansigtsgenkendelse er slået fra.');
+}
+
+function clearFaceGreeting() {
+  faceRevision++;
+  $('faceGreeting').hidden = true;
+}
+
+async function enrollFace(event) {
+  const files = Array.from(event.target.files);
+  event.target.value = '';
+  if (faceBusy || !files.length) return;
+  if (files.length < 3 || files.length > 5) {
+    updateFaceSetup('Vælg 3–5 billeder af én person.');
+    return;
+  }
+  clearFaceGreeting();
+  faceBusy = true;
+  $('faceFiles').disabled = true;
+  $('faceForget').disabled = true;
+  updateFaceSetup('Læser referencebilleder lokalt …');
+  try {
+    const references = [];
+    for (const [index, file] of files.entries()) {
+      const image = new Image();
+      const url = URL.createObjectURL(file);
+      try {
+        image.src = url;
+        await image.decode();
+        const descriptor = await describeFace(image);
+        if (validDescriptor(descriptor)) references.push(descriptor);
+        else throw new Error('Vælg et billede med præcis ét tydeligt ansigt.');
+      } catch (error) {
+        if (error.message.startsWith('Vælg et billede')) {
+          updateFaceSetup(`Billede ${index + 1}. ${error.message}`);
+          return;
+        }
+        throw error;
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
+    if (!references.every((reference, index) =>
+      matchesReference(reference, references.filter((_, other) => other !== index)))) {
+      updateFaceSetup('Billederne matcher ikke tydeligt. Prøv tre skarpe billeder taget lige forfra eller let fra siden.');
+      return;
+    }
+    localStorage.setItem(faceKey, JSON.stringify(references));
+    updateFaceSetup();
+  } catch {
+    updateFaceSetup('Opsætningen mislykkedes. Tjek forbindelsen, og prøv igen med tydelige billeder.');
+  } finally {
+    faceBusy = false;
+    $('faceFiles').disabled = false;
+    $('faceForget').disabled = false;
+  }
+}
+
+async function checkFaceGreeting(image) {
+  if (faceBusy) return;
+  clearFaceGreeting();
+  const references = readReferences();
+  if (!references.length) return;
+  const revision = faceRevision;
+  faceBusy = true;
+  try {
+    const descriptor = await describeFace(image);
+    if (revision !== faceRevision || mode !== 'selfie' ||
+        !matchesReference(descriptor, readReferences())) return;
+    const choices = faceGreetings.map((_, index) => index).filter(index => index !== previousGreeting);
+    previousGreeting = choices[Math.floor(Math.random() * choices.length)];
+    const [title, message] = faceGreetings[previousGreeting];
+    $('faceGreetingTitle').textContent = title;
+    $('faceGreetingMessage').textContent = message;
+    $('faceGreeting').hidden = false;
+  } catch {
+    if (revision === faceRevision) updateFaceSetup('Ansigtsgenkendelse kunne ikke indlæses. Prøv igen.');
+  } finally {
+    faceBusy = false;
+  }
+}
+
+$('faceSetup').ontoggle = event => { if (event.target.open) updateFaceSetup(); };
+$('faceFiles').onchange = enrollFace;
+$('faceForget').onclick = () => {
+  try {
+    localStorage.removeItem(faceKey);
+    clearFaceGreeting();
+    updateFaceSetup();
+  } catch {
+    updateFaceSetup('Browseren kunne ikke slette ansigtsprofilen.');
+  }
+};
 
 const levels = [
   ['Porcelænsprinsesse', 'Laboratoriet fandt kun spor af bronzer.'],
@@ -125,9 +329,9 @@ function measure(image) {
 }
 async function start(){if(!navigator.mediaDevices?.getUserMedia){status('Livekamera kræver HTTPS og en understøttet browser. Selfieanalyse virker stadig.');return}try{stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:'user',width:{ideal:720},height:{ideal:960}}});$('video').srcObject=stream;await $('video').play();$('video').hidden=false;$('placeholder').hidden=true;$('start').disabled=true;$('stop').disabled=false;status('LIVE · Ansigtet skal være midt i den stiplede oval.');tick(performance.now())}catch(e){status('Kameraet kunne ikke startes: '+(e.name==='NotAllowedError'?'Giv kameraadgang i browseren.':e.message))}}
 function tick(t){if(!stream||mode!=='live')return;if(t-lastSample>450){lastSample=t;if($('video').readyState>=2)measure($('video'))}frameId=requestAnimationFrame(tick)}function stop(){liveScore=null;cancelAnimationFrame(frameId);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('video').srcObject=null;$('video').hidden=true;$('start').disabled=false;$('stop').disabled=true;if(mode==='live'){$('placeholder').hidden=false;status('Kameraet er stoppet.')}}
-function switchMode(next){if(mode===next)return;stop();mode=next;$('liveTab').classList.toggle('active',next==='live');$('selfieTab').classList.toggle('active',next==='selfie');$('liveControls').hidden=next!=='live';$('selfieControls').hidden=next!=='selfie';$('photo').hidden=true;$('placeholder').hidden=false;status(next==='live'?'Klar til liveanalyse.':'Vælg et billede eller tag en selfie.');}
+function switchMode(next){if(mode===next)return;clearFaceGreeting();stop();mode=next;$('faceSetup').hidden=next!=='selfie';$('liveTab').classList.toggle('active',next==='live');$('selfieTab').classList.toggle('active',next==='selfie');$('liveControls').hidden=next!=='live';$('selfieControls').hidden=next!=='selfie';$('photo').hidden=true;$('placeholder').hidden=false;status(next==='live'?'Klar til liveanalyse.':'Vælg et billede eller tag en selfie.');}
 $('liveTab').onclick=()=>switchMode('live');$('selfieTab').onclick=()=>switchMode('selfie');$('start').onclick=start;$('stop').onclick=stop;
-$('file').onchange=e=>{let file=e.target.files?.[0];if(!file)return;let url=URL.createObjectURL(file);const img=$('photo');img.onload=()=>{URL.revokeObjectURL(url);photoReady=true;$('analyze').disabled=false;$('placeholder').hidden=true;img.hidden=false;status('Selfie indlæst. Tryk på Analyser billede.');};img.onerror=()=>{URL.revokeObjectURL(url);status('Billedet kunne ikke åbnes.')};img.src=url};$('analyze').onclick=()=>{if(photoReady)measure($('photo'))};
+$('file').onchange=e=>{let file=e.target.files?.[0];if(!file)return;clearFaceGreeting();photoReady=false;$('analyze').disabled=true;let url=URL.createObjectURL(file);const img=$('photo');img.onload=()=>{URL.revokeObjectURL(url);photoReady=true;$('analyze').disabled=false;$('placeholder').hidden=true;img.hidden=false;status('Selfie indlæst. Tryk på Analyser billede.');};img.onerror=()=>{URL.revokeObjectURL(url);status('Billedet kunne ikke åbnes.')};img.src=url};$('analyze').onclick=()=>{if(photoReady){measure($('photo'));checkFaceGreeting($('photo'))}};
 function resultCanvas(){let c=document.createElement('canvas');c.width=900;c.height=1100;let g=c.getContext('2d');g.fillStyle='#0b111b';g.fillRect(0,0,900,1100);g.fillStyle='#f28a2d';g.font='bold 60px system-ui';g.fillText('ORANGE-O-METER',60,100);g.fillStyle='#a8b7c9';g.font='25px system-ui';g.fillText('SCIENTIFIC EDITION · FACIAL CHROMATICS LAB',60,145);let source=mode==='live'&&stream?$('video'):mode==='selfie'&&photoReady?$('photo'):null;if(source){let w=source.videoWidth||source.naturalWidth,h=source.videoHeight||source.naturalHeight;if(w&&h){let scale=Math.min(780/w,570/h),dw=w*scale,dh=h*scale;g.drawImage(source,(900-dw)/2,185,dw,dh)}}g.fillStyle='#f28a2d';g.font='bold 120px system-ui';g.fillText(lastScore.toFixed(1)+'%',60,875);let i=levelIndex(lastScore);g.fillStyle='#fff';g.font='bold 45px system-ui';g.fillText(levels[i][0],60,950,780);g.fillStyle='#a8b7c9';g.font='23px system-ui';g.fillText('For sjov · Ikke en medicinsk måling',60,1035);return c}
 $('save').onclick=()=>{if(lastScore===null)return;resultCanvas().toBlob(blob=>{if(!blob)return;let a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download='orange-o-meter-resultat.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)},'image/png')};$('share').onclick=async()=>{if(lastScore===null)return;let c=resultCanvas();c.toBlob(async blob=>{if(!blob)return;let file=new File([blob],'orange-o-meter.png',{type:'image/png'});try{if(navigator.canShare?.({files:[file]}))await navigator.share({files:[file],title:'Orange-O-Meter'});else if(navigator.share)await navigator.share({title:'Orange-O-Meter',text:`Min Orange Index er ${lastScore.toFixed(1)}%!`});else $('save').click()}catch(e){if(e.name!=='AbortError')status('Deling mislykkedes. Brug Gem resultatkort.') }},'image/png')};document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});window.addEventListener('pagehide',stop);
 </script></body></html>
